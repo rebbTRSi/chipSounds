@@ -21,6 +21,28 @@ Is stepOn? == have we calculated 1764 samples. -> out % 1764 = 0
 	increase step counter
 	check waveform from table -> link to waveform table
 	copy to output at rate of transpose
+
+ADSR lenghts:
+
+HEX ATTACK	DECAY/RELEASE
+0 	20m 	6ms
+1 	8ms 	24ms
+2 	16ms	48ms
+3 	24ms	72ms
+4 	38ms 	114ms
+5 	56ms 	168ms
+6 	68ms 	204ms
+7 	80ms 	240ms
+8 	100ms	300ms
+9 	250ms	750ms
+A 	500ms 	1.5s
+B 	800ms 	2.4s
+C 	1s 		3s
+D 	3s 		9s
+E 	5s 		15s
+F 	8s 		24s
+
+
 */
 
 #include <stdio.h>
@@ -30,31 +52,52 @@ Is stepOn? == have we calculated 1764 samples. -> out % 1764 = 0
 #include "audioHelpers.h"
 #define PI 3.14159265
 
-int wave[16]=
-{
-	0,1,2,3,4,0,0,1,1,1,1,1,1,1,1,1
-};
-
-int frequency[16]=
-{
-	120,440,440,220,110,0,0,0,0,0,0,0,0,0
-};
-
-int volume[16]=
-{
-	127,127,127,80,20
+struct instrument {
+	int wave[16];
+ 	int frequency[16];
+	float volume;
+	int attack;
+	int decay;
+	int sustain;
+	int release;
 };
 
 int main(void)
 {
 
+struct instrument bassDrum = {
+	{sine,noise,square,sawtooth,sawtooth},		// waves: triangle,noise,square,sawtooth
+	{220,220,110,40,220},						// frequency
+	27,										// volume
+	100,											// attack
+	20,											// decay
+	10,											// sustain
+	4 											// release
+	};
+
+struct instrument snareDrum = {
+	{sine,sine,square},
+	{440,220,110,40},
+	117,
+	30,
+	30,
+	2,
+	1
+	};
+
+struct instrument instrumentsArray[16] = {
+	snareDrum,
+	bassDrum
+};
+
 int SR = 44100;
 int bitDepth = 16;
 int wavetype = 0;
 int numberOfChannels = 2;
-int stepLenght = 5 ;// 1/5th of second = 20mS
+int stepLenght = 50 ;// 1/50th of second = 20mS
 int kbps = SR * bitDepth / 8;
-int stepSize =  (kbps / stepLenght) / 10 ;
+int stepSize =  kbps / stepLenght ;
+int onemS = kbps / 100;
 FILE* file;
 int soundLength = 4 * stepSize;
 int TABLE_LEN = 1024;
@@ -78,6 +121,7 @@ file = fopen ("sample.raw" , "w" );
 int q = 200;
 int steps = 0;
 int length = 1024;
+
 /*
 clock_t start = clock(), diff;
 test1();
@@ -87,22 +131,29 @@ printf("Time taken %d seconds %d milliseconds", msec/1000, msec%1000);
 */
 
 int currentSample = 0;
-
+int totalsCalculated = 0;
+int currentInstrument = 1;
+float currentVolume = 0;
 for (j=0;j<stepSize*5;j++) {
 	
+	if (totalsCalculated < instrumentsArray[currentInstrument].attack*onemS)
+		currentVolume += 0.1;
+		if (currentVolume > instrumentsArray[currentInstrument].volume)
+			currentVolume = instrumentsArray[currentInstrument].volume;
+
 	if (currentSample > stepSize) {
 		steps++;
 		if (steps<16) {
-			wavetype = wave[steps];
+			wavetype = instrumentsArray[currentInstrument].wave[steps];
 		}
 		currentSample = 0;
 	}
 
 	if (steps == 0 && currentSample == 0) { // handle the first step
-		wavetype = wave[steps];
+		wavetype = instrumentsArray[currentInstrument].wave[steps];
 	}
 
-	sample = getSample (wavetype,SR,frequency[steps],volume[steps]);
+	sample = getSample (wavetype,SR,instrumentsArray[currentInstrument].frequency[steps],currentVolume);
 
 	if (sample > 127)
 		sample = 127;
@@ -110,6 +161,7 @@ for (j=0;j<stepSize*5;j++) {
 		sample = -128;
 
 	currentSample++;
+	totalsCalculated++;
 	fwrite(&sample,sizeof(char),1,file);
 	
 	}
