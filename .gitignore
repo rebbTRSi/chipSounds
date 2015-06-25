@@ -1,0 +1,7 @@
+# Build and Release Folders
+bin/
+.build_Debug/
+.DS_STORE
+.settings
+a.out
+sample.raw
