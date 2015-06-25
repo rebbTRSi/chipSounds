@@ -31,10 +31,19 @@ int main() {
         t :> time;
         if (time - lastDebounce > 50000) {
             if (button != buttonOld) {
+                printf ("calculating\n");
                 t :> starttime;
-                calculate();
+                par {
+                    calculate();
+                    calculate();
+                    calculate();
+                    calculate();
+                }
                 t :> stoptime;
-                printf( "duration=%d ms\n", (( stoptime - starttime) * 10)/1000000);
+                printf("starttime: %d",starttime);
+                printf("stoptime: %d",stoptime);
+
+                printf( "duration=%ld ms\n", (( stoptime - starttime) * 10)/1000000);
                 x++;
                 buttonOld = button;
             }
@@ -44,5 +53,6 @@ int main() {
     }
            return 0;
 }
+
 
 
