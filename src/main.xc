@@ -1,58 +1,34 @@
 #include <stdio.h>
-#include <platform.h>
 #include <xs1.h>
+#include <xscope.h>
+#include <platform.h>
 #include <timer.h>
+#include <stdlib.h>
+#include "pwm.h"
+#include "trigger.h"
 
-port led = XS1_PORT_1A;
-port butt1 = XS1_PORT_32A;
+void buffer(chanend c_producer, chanend c_consumer);
 
-  extern int calculate();  // This function is defined in C
+port p_speaker = XS1_PORT_1A;
+
+/* xscope initialisation section
+ * ( called before main() )
+ * * * */
+
 
 int main() {
-    int buttonOld = 1;
-    timer t;
-    int starttime;
-    int stoptime;
-    int time;
-    int lastDebounce;
-    int x=1;
+    chan c_pwm, c_synth_audio;
 
-    while(1){
-        unsigned int time;
-        int current_val = 0;
-        int is_stable = 1;
-        const unsigned debounce_delay_ms = 50;
-        unsigned debounce_timeout;
+    xscope_register(1, XSCOPE_CONTINUOUS , " Continuous Value 1", XSCOPE_INT , " Value ");
 
-        unsigned button = peek(butt1) & 1;
-        if (button == 0 && button != buttonOld) {
-            t :> lastDebounce;
-        }
-        t :> time;
-        if (time - lastDebounce > 50000) {
-            if (button != buttonOld) {
-                printf ("calculating\n");
-                t :> starttime;
+      while(1){
                 par {
-                    calculate();
-                    calculate();
-                    calculate();
-                    calculate();
-                }
-                t :> stoptime;
-                printf("starttime: %d",starttime);
-                printf("stoptime: %d",stoptime);
-
-                printf( "duration=%ld ms\n", (( stoptime - starttime) * 10)/1000000);
-                x++;
-                buttonOld = button;
-            }
-        }
-        buttonOld = button;
-
+                         trigger(c_synth_audio);
+                         pwm_server(c_pwm, p_speaker, 22050);
+                         buffer(c_synth_audio, c_pwm);
+                   }
     }
            return 0;
 }
-
 
 

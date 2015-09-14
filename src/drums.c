@@ -52,6 +52,7 @@ F 	8s 		24s
 #include <math.h>
 #include <time.h>
 #include "audioHelpers.h"
+#include "channel_funcs.h"
 #define PI 3.14159265
 
 struct instrument {
@@ -64,21 +65,21 @@ struct instrument {
 	int release;
 };
 
-int calculate()
+void calculate(buffer)
 {
 
 struct instrument bassDrum = {
-	{triangle,noise,square,sawtooth,sine},		// waves: triangle,noise,square,sawtooth
+	{triangle,noise,square,square,square},		// waves: triangle,noise,square,sawtooth
 	{880,220,110,40,220},						// frequency
-	{127,68},										// volume
-	20,											// attack
-	20,											// decay
-	50,											// sustain
+	{127,64},					        		// volume
+	10,											// attack
+	10,											// decay
+	10,											// sustain
 	40 											// release
 	};
 
 struct instrument snareDrum = {
-	{sine,sine,square},
+	{triangle,noise,square,square,square},
 	{440,220,110,40},
 	{117,70},
 	30,
@@ -91,26 +92,28 @@ struct instrument instrumentsArray[16] = {
 	snareDrum,
 	bassDrum
 };
-
+int bufferSize =512;
 int SR = 22050;
-int bitDepth = 8;
+int bitDepth = 16;
 int wavetype = 0;
 int stepLenght = 50 ;// 1/50th of second = 20mS
 int kbps = SR * bitDepth / 8;
 int stepSize =  kbps / stepLenght ;
 int onemS = kbps / 1000;
-int TABLE_LEN = 1024;
 float duration;
-double j;
+int j;
 duration = 10.0;
-signed int sample;
-
+int sample;
+int sampleBuffer[bufferSize];
 int steps = 0;
+int toOutput = 0;
 int currentSample = 0;
 int totalsCalculated = 0;
 int currentInstrument = 1;
 float currentVolume = 0;
+int q = 0;
 for (j=0;j<stepSize*5;j++) {
+
 	if (totalsCalculated < (instrumentsArray[currentInstrument].attack)*onemS) {
 		if (currentVolume < instrumentsArray[currentInstrument].volume[0]) {
 		currentVolume += 0.1;
@@ -145,18 +148,27 @@ for (j=0;j<stepSize*5;j++) {
 	if (steps == 0 && currentSample == 0) { // handle the first step
 		wavetype = instrumentsArray[currentInstrument].wave[steps];
 	}
-
+	//printf ("wavetype: %d,samplerate: %d frequency: %d,Volume: %f\n",wavetype,SR,instrumentsArray[currentInstrument].frequency[steps],currentVolume);
 	sample = getSample (wavetype,SR,instrumentsArray[currentInstrument].frequency[steps],currentVolume);
-	if (sample > 127)
-		sample = 127;
-	if (sample < -128)
-		sample = -128;
+
+	if (sample > 127 )
+		sample = 127 ;
+	if (sample < -128 )
+		sample = -128 ;
+
+	sampleBuffer[toOutput] = sample;
 
 	currentSample++;
 	totalsCalculated++;
-	
+	toOutput++;
+	if (toOutput == bufferSize) {
+	    for (int y=0;y<bufferSize;y++) {
+	        xc_channel_out (buffer,sampleBuffer[y]);
+	    }
+	        toOutput =0;
 	}
-printf ("done.");
-return 0;
 }
+}
+
+
 

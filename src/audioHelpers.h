@@ -46,8 +46,8 @@ double noiseOsc (int A) { return  A*((2.0*((rand()%(127- (-128)))+ (-128))-1.0)/
 double squareOsc (int A, int FR, int SR) { if(p< M_PI)y=A;else y=-A;p=p+((2 * M_PI * FR)/SR);if(p>2*M_PI)p=p-(2*M_PI);return y; }
 double sawtoothOsc (int A, int FR, int SR) { y2=A-(A/M_PI*phase);phase=phase+((2*M_PI*FR)/SR);if(phase>2*M_PI){phase = phase - (2 * M_PI);}return y2; }
 double triangleOsc (int A, int FR, int SR) { if (triPhase < M_PI) y = -A + (2 * A / M_PI) * triPhase; else y = 3*A - (2 * A / M_PI) * triPhase; triPhase = triPhase + ((2 * M_PI * FR) / SR); if (triPhase > 2 * M_PI) triPhase = triPhase - (2 * M_PI); return y; }
-int getSample (wavetype,SR,FRuency,volume) {
-signed int sample;
+double getSample (int wavetype,int SR,int FRuency,float volume) {
+double sample;
 switch ( wavetype ) 
 	{
 	case 0:
