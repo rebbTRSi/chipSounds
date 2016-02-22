@@ -35,10 +35,11 @@ int buttonOld = 1;
 int buttonOld1 = 1;
 
   timer t;
+  timer t1;
   int starttime;
   int stoptime;
   int time;
-int time1;
+  int time1;
   int lastDebounce;
   int lastDebounce1;
   int x1=1;
@@ -46,6 +47,7 @@ int time1;
   int uiState;
   int isPlaying;
   int currentInstrumentNr = 0;
+
   void uiHandler(chanend uiTrigger) {
     current = getInstrument(currentInstrumentNr); // get instrumentdata
 
@@ -70,21 +72,16 @@ int time1;
     unsigned button1 = peek(butt2) & 1;
 
     if (button1 == 1 && button1 != buttonOld1) {
-        t :> lastDebounce1;
+        t1 :> lastDebounce1;
     }
-    t :> time1;
-    cls();
-    www++;
-    sprintf(str,"db: %d   ",www);
-
-    text (str);
-
+    t1 :> time1;
     if (time1 - lastDebounce1 > 50000) {
                if (button1 != buttonOld1) {
                safememset(str,0,300);
                currentInstrumentNr++;
-               if (currentInstrumentNr > 3)
+               if (currentInstrumentNr > 3 || currentInstrumentNr < 0) {
                    currentInstrumentNr = 0;
+               }
                current = getInstrument(currentInstrumentNr); // get instrumentdata
                int length = current.length;
                    x1 = 0;

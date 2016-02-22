@@ -20,8 +20,6 @@
 
 #include <xs1.h>
 #include <stdio.h>
-#include <xscope.h>
-
 
 void pwm_server(chanend c_samples, out port p_pwm_output, int pwm_frequency)
 {
@@ -39,7 +37,6 @@ void pwm_server(chanend c_samples, out port p_pwm_output, int pwm_frequency)
 		select
 		{
 		case c_samples :> sample:
-		    xscope_probe_data(0, sample);
 			duty_cycle = (((sample*20)+(1<<15)) * period)>>16;
 			break;
 		case t_pwm when timerafter(time) :> int _:

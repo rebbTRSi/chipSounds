@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <xs1.h>
-#include <xscope.h>
 #include <platform.h>
 #include <timer.h>
 #include <stdlib.h>
@@ -21,8 +20,6 @@ int main() {
     chan c_pwm, c_synth_audio, uiTrigger;
     init();
     led(1);
-
-    xscope_register(1, XSCOPE_CONTINUOUS , " Continuous Value 1", XSCOPE_INT , " Value ");
 
     while(1){
         par {

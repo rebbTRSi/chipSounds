@@ -343,7 +343,7 @@ else {
 }
 void calculate(buffer)
 {
-    if (i<buffer) {
+    for (i=0;i<44100*16*2;i++) {
     sample = playPattern(i);
     i++;
     sampleBuffer[toOutput] = sample;
