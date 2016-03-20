@@ -65,6 +65,7 @@ int currentSample = 0;
 int currentCalculated = 0;
 int trailing = 0;
 int currentInstrument = 0;
+int totalsCalculated = 0;
 float currentVolume = 0;
 int patternPosition = 0;
 FILE *fp;
@@ -192,19 +193,7 @@ void initialize(int sampleRate, int bitDepth)
     instrumentsArray[3] = arpeg;
     instrumentsArray[4] = blank;
 
-    sampleBuffer[bufferSize];/*
-
-struct instrument bassDrum = {
-    {sine,noise,square,sawtooth,sine},      // waves: triangle,noise,square,sawtooth
-    {180,147,73,68,50},                     // frequency
-    {67,110},                                       // volume
-    100,                                            // attack
-    10,                                         // decay
-    20,                                         // sustain
-    100,                                            // release
-    5
-    };
-*/
+    sampleBuffer[bufferSize]=0;
 
 beatsPerSecond = (float)pattern.bpm/60.0f;
 quarterNoteLengths = (1000.0f/beatsPerSecond);
@@ -242,7 +231,6 @@ int setInstrument (int instrumentNr, struct instrument instrumentData ) {
 
 struct instrument getInstrument (int instrumentNr) {
     if (instrumentNr <= 16 && instrumentNr >= 0) {
-        printf ("returning instrument: %d",instrumentNr);
         return instrumentsArray[instrumentNr];
     }
     else {
@@ -254,7 +242,12 @@ struct instrument getInstrument (int instrumentNr) {
     }
 }
 
-float playPattern(int totalsCalculated) {
+float playPattern(int hometotalsCalculated) {
+
+    if (totalsCalculated >= hometotalsCalculated) {
+        output = 0.0;
+        return -128.0;
+    }
     //printf ("instrumentLengt:%d samples\n",instrumentsArray[currentInstrument].length*stepSize);
     //printf ("max instrument length:%d in samples in seconds: %f\n",samplesInterval2,sixteenthNoteLength);
     //printf ("stepsize: %d",stepSize);
@@ -323,7 +316,8 @@ if ( patternPosition <= 31 ) {
         trailing=0;
         patternPosition++;
         if (patternPosition > 31)
-                    patternPosition = 0;
+        patternPosition = 0;
+
         currentInstrument = pattern.patternData[patternPosition];
         noteLimit = totalsCalculated + sixteenthNoteLength*onemS;
     }
@@ -336,11 +330,74 @@ else {
 }
         return 0.0;
 }
-void calculate(buffer)
+float playInstrument(playInstr,i) {
+    if (currentSample < (instrumentsArray[playInstr].attack)*onemS) {
+           if (currentVolume < instrumentsArray[playInstr].volume[0]) {
+           currentVolume += 0.1;
+       }
+           else {
+               currentVolume = instrumentsArray[playInstr].volume[0]   ;
+                   }
+       }
+       else if (currentSample < (instrumentsArray[playInstr].attack+instrumentsArray[playInstr].decay)*onemS && currentVolume > instrumentsArray[playInstr].volume[1]) {
+           currentVolume -= 0.1;
+       }
+       else if (currentSample < (instrumentsArray[playInstr].attack+instrumentsArray[playInstr].decay+instrumentsArray[playInstr].sustain)*onemS ) {
+           currentVolume = currentVolume;
+       }
+       else {
+           if (currentVolume > 0.0) {
+           currentVolume -=0.1;
+       }
+       else {
+           currentVolume =0.0;
+       }
+   }
+       if (currentSample > stepSize) {
+           steps++;
+           if (steps>15) {
+               steps = 15;
+           }
+           if (steps<=15) {
+               wavetype = instrumentsArray[playInstr].wave[steps];
+           //  fprintf(stderr, "-1234 reading wave:%d\n",wavetype);
+           }
+           currentSample = 0;
+       }
+       if (steps == 0 && currentCalculated == 0) { // handle the first step
+           wavetype = instrumentsArray[playInstr].wave[steps];
+       }
+       output = getSample (wavetype,SR,instrumentsArray[playInstr].frequency[steps],currentVolume,wave1);
+       if (output > 127)
+           output = 127;
+       if (output < -128)
+           output = -128;
+       currentSample++;
+       currentCalculated++;
+       totalsCalculated++;
+       // if current calculated sample is under 16th note, but over current instrument lenght then pad to zeroes
+       if (currentCalculated < samplesInterval2 && currentCalculated > stepSize*instrumentsArray[playInstr].length) {
+           //printf("trailing from: %d to: %d and we are over: %d \n",currentCalculated,samplesInterval2,stepSize*instrumentsArray[currentInstrument].length);
+           output = 0.0;
+           totalsCalculated++;
+       //  currentSample++;
+       //  currentCalculated++;
+           trailing++;
+       }
+
+       return output;
+       }
+
+void calculate(buffer,playInstr)
 {
-    for (i=0;i<44100*16*2;i++) {
+    currentSample = 0;
+    currentCalculated = 0;
+    totalsCalculated = 0;
+    steps = 0;
+    toOutput = 0;
+
+    for (i=0;i<44100*10;i++) {
     sample = playPattern(i);
-    i++;
     sampleBuffer[toOutput] = sample;
     toOutput++;
 

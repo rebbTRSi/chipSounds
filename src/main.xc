@@ -16,7 +16,7 @@ port p_speaker = XS1_PORT_1A;
 int LEN = 30;
 
 int main() {
-    initialize (22050,16); // initialize instruments
+    initialize (22050,8); // initialize instruments
     chan c_pwm, c_synth_audio, uiTrigger;
     init();
     led(1);
