@@ -193,6 +193,7 @@ void initialize(int sampleRate, int bitDepth)
     instrumentsArray[4] = blank;
 
     sampleBuffer[bufferSize];/*
+
 struct instrument bassDrum = {
     {sine,noise,square,sawtooth,sine},      // waves: triangle,noise,square,sawtooth
     {180,147,73,68,50},                     // frequency
@@ -234,15 +235,9 @@ noteLimit = (int) (sixteenthNoteLength * (kbps/1000.0f));
 kulli = 1;
 }
 
-int setInstrument (int instrumentNr, char instrumentName[], struct instrument instrument) {
-    struct instrument seppo = instrument;
-    if (instrumentNr <= 16 && instrumentNr >= 0) {
-        instrumentsArray[instrumentNr] = seppo;
-    }
-    else {
-        return 0;
-    }
-    return 1;
+int setInstrument (int instrumentNr, struct instrument instrumentData ) {
+   instrumentsArray[instrumentNr] = instrumentData;
+   return 1;
 }
 
 struct instrument getInstrument (int instrumentNr) {
@@ -352,8 +347,8 @@ void calculate(buffer)
     if (toOutput == bufferSize) {
         for (int y=0;y<bufferSize;y++) {
             xc_channel_out (buffer,sampleBuffer[y]);
-        }
+            }
             toOutput = 0;
-    }
+        }
     }
 }

@@ -15,6 +15,5 @@ void trigger (chanend uiTrigger, chanend c_synth_audio) {
     uiTrigger :> x;
     if (x==1) {
         calculate(c_synth_audio);
-        uiTrigger <: 2;
     }
 }
