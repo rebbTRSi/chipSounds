@@ -53,11 +53,7 @@ float sawtoothOsc (float A, int FR, int SR) { y2=A-(A/M_PI*phase);phase=phase+((
 float triangleOsc (float A, int FR, int SR) { if (triPhase < M_PI) y = -A + (2 * A / M_PI) * triPhase; else y = 3*A - (2 * A / M_PI) * triPhase; triPhase = triPhase + ((2 * M_PI * FR) / SR); if (triPhase > 2 * M_PI) triPhase = triPhase - (2 * M_PI); return y; }
 float getSample (int wavetype,int SR,int FRuency,float volume,struct waveDefaults waveDefaults) {
 float sample;
-//p = waveDefaults.p;
-//y = waveDefaults.y;
-//y2 = waveDefaults.y2;
-//phase = waveDefaults.phase;
-//triPhase = waveDefaults.triPhase;
+
 switch ( wavetype ) 
     {
     case 0:

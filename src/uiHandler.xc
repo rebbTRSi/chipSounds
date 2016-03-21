@@ -15,9 +15,9 @@ port butt3 = XS1_PORT_1C;
 extern void calculate(chanend c_synth_audio);  // This function is defined in C
 void fonttest(void);
 void printText(char textBuffer[]);
-void printCurrent(int currentInstrumentNr);
-typedef enum { triangle, noise, square, sawtooth, sine } waves;
-char str[300];
+void printCurrent(int currentInstrumentNr,int inversedChar);
+typedef enum { triangle, noise, square, sawtooth, sine } waves; // sine = !, triangle = ", square = #, noise = $, sawtooth = %
+char str[200];
 int www = 0;
 struct instrument {
     int wave[16];
@@ -52,7 +52,7 @@ int buttonOld2 = 1;
   char teksti[33];
   int uiState;
   int currentInstrumentNr = 0;
-
+  int currentInverseWaveNr=0;
   void uiHandler(chanend uiTrigger) {
     current = getInstrument(currentInstrumentNr); // get instrumentdata
     struct instrument copyInstrumentTest = {
@@ -85,8 +85,7 @@ int buttonOld2 = 1;
                     if (currentInstrumentNr > 3 || currentInstrumentNr < 0) {
                         currentInstrumentNr = 0;
                     }
-
-                    printCurrent(currentInstrumentNr);
+                    printCurrent(currentInstrumentNr,currentInverseWaveNr);
                 }
             }
 
@@ -96,8 +95,22 @@ int buttonOld2 = 1;
             t2 :> time2;
             if (time2 - lastDebounce2 > 50000) {
                 if (button2 != buttonOld2) {
-                    setInstrument(currentInstrumentNr,copyInstrumentTest);
-                    printCurrent(currentInstrumentNr);
+                    cls();
+                    safememset(str,0,200);
+                    current = getInstrument(currentInstrumentNr); // get instrumentdata
+                    int length = current.length;
+                    currentInverseWaveNr++;
+
+                    if (currentInverseWaveNr > current.length-1) {
+                        currentInverseWaveNr = 0;
+                    }
+
+                   // sprintf(str,"inv nr: %d  ",currentInverseWaveNr);
+                   // text (str);
+
+                      printCurrent(currentInstrumentNr,currentInverseWaveNr);
+                   // setInstrument(currentInstrumentNr,copyInstrumentTest);
+                   // printCurrent(currentInstrumentNr);
                 }
             }
             if (button == 1 && button != buttonOld) {
@@ -106,8 +119,7 @@ int buttonOld2 = 1;
             t :> time;
             if (time - lastDebounce > 50000) {
                 if (button != buttonOld) {
-                    int sendInstrumentNr = currentInstrumentNr;
-                    uiTrigger <: sendInstrumentNr;
+                    uiTrigger <: 1;
                 }
             }
             buttonOld = button;
@@ -120,9 +132,9 @@ void fonttest(void){
     cls();
     text("Button pressed\n");           //text() function dumps direct to screen
 }
-void printCurrent(int currentInstrumentNr) {
+void printCurrent(int currentInstrumentNr,int inversedChar) {
     cls();
-    safememset(str,0,300);
+    safememset(str,0,200);
 
     if (currentInstrumentNr < 0 || currentInstrumentNr > 3) {
         text("ime nullii");
@@ -133,15 +145,31 @@ void printCurrent(int currentInstrumentNr) {
     x1 = 0;
     sprintf(str,"instr nr: %d   ",currentInstrumentNr);
         for (x1=0;x1<length;x1++) {
-            switch (current.wave[x1]) {
-                case triangle : safestrcat(str,"triangle "); break;
-                case noise : safestrcat(str,"noise "); break;
-                case square : safestrcat(str,"square "); break;
-                case sawtooth : safestrcat(str,"sawtooth "); break;
-                case sine : safestrcat(str,"sine "); break;
-                default : safestrcat(str,"null "); break;
+            if (x1==inversedChar) {             // sine = !, triangle = ", square = #, noise = $, sawtooth = %
+                switch (current.wave[x1]) {
+                    case triangle : safestrcat(str,"("); break;
+                    case noise : safestrcat(str,"*"); break;
+                    case square : safestrcat(str,")"); break;
+                    case sawtooth : safestrcat(str,"+"); break;
+                    case sine : safestrcat(str,"'"); break;
+                    default : safestrcat(str,"null"); break;
+                }
+            }
+            else {
+                switch (current.wave[x1]) {
+                    case triangle : safestrcat(str,"\""); break;
+                    case noise : safestrcat(str,"$"); break;
+                    case square : safestrcat(str,"#"); break;
+                    case sawtooth : safestrcat(str,"%"); break;
+                    case sine : safestrcat(str,"!"); break;
+                    default : safestrcat(str,"null"); break;
+                }
             }
         }
+        char freqBuf[20];
+
+        sprintf(freqBuf,"-- %d -- ",current.frequency[inversedChar]);
+        safestrcat(str,freqBuf);
         text (str);
 }
 

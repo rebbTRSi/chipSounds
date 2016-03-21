@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "nokia_drv.h"
-
+int PUS = 1;
 // Driver Functions
 void init(void){
     begin(CONTRAST);
@@ -20,16 +20,16 @@ void init(void){
 
 void setup(void){
    SCE <:0 ;                    //enable display
-   delay_milliseconds(WUS);     //minimum delay is 100ns but using 1us
+   delay_microseconds(PUS);     //minimum delay is 100ns but using 1us
 }
 
 void begin(char contrast){
     setup();
     RST <: 0;
     LED <: 0;
-    delay_milliseconds(WUS);
+    delay_microseconds(PUS);
     RST <: 1;
-    delay_milliseconds(WUS);
+    delay_microseconds(PUS);
     lcd_cmd(0x21);              //extended mode
     lcd_cmd(0x14);              //bias
     lcd_cmd(contrast);          //vop
