@@ -19,7 +19,6 @@
 // IN THE SOFTWARE.
 
 #include <xs1.h>
-#include <xscope.h>
 
 
 #define k_SamplePeriod (XS1_TIMER_HZ / 22050)

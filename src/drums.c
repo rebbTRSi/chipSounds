@@ -69,6 +69,7 @@ int currentInstrument = 0;
 int totalsCalculated = 0;
 float currentVolume = 0;
 int patternPosition = 0;
+int voiceChannels = 1;
 FILE *fp;
 signed int sample;
 int sampleBuffer[];
@@ -82,18 +83,35 @@ struct instrument {
     int release;
     int length;
 };
+struct voice {
+       int currentSample;
+       int currentCalculated;
+       int trailing;
+       int currentInstrument;
+       int totalsCalculated;
+       float currentVolume;
+       signed int output;
+   };
 
 struct pattern {
     int bpm;
     int patternData[32];
 };
 
-struct pattern pattern = {
+struct pattern pattern1 = {
     120,
     //{0,3,3,3,0,3,3,3,0,3,3,3,0,3,3,3,0,3,3,3}
-    {1,4,2,2,1,4,2,2,1,4,2,0,1,4,2,2,1,4,2,2,1,4,2,2,1,4,2,0,1,3,1,1}
+    {1,4,2,2,1,4,2,2,1,4,2,0,1,4,2,2,1,4,2,2,1,4,2,2,1,4,2,0,1,1,1,1}
 //  {0,3,0,3,0,3,0,3,0,3,0,3,0,3,0,3}
 };
+
+struct pattern pattern2 = {
+    120,
+    {3,4,4,3,4,4,3,4,4,3,4,4,3,4,4,3,4,4,3,3,3,4,4,3,4,4,3,4,4,3,4,4,3,4,4,3,4,4,3,3}
+   // {1,4,2,2,1,4,2,2,1,4,2,0,1,4,2,2,1,4,2,2,1,4,2,2,1,4,2,0,1,3,1,1}
+//  {0,3,0,3,0,3,0,3,0,3,0,3,0,3,0,3}
+};
+
 int samplesInterval2 = 0;
 float beatsPerSecond = 0.0f;
 float quarterNoteLengths = 0.0f;
@@ -114,6 +132,7 @@ int TABLE_LEN = 0;
 float duration = 0.0f;
 double j;
 double out;
+signed int mixedOutput;
 signed int output;
 
 //double sample_increment = frequency*TABLE_LEN/SR;
@@ -123,7 +142,10 @@ signed int output;
 int bpse = 0;
 int totalLength = 0;
 int noteLimit = 0;
-
+struct waveDefaults wavez1;
+struct waveDefaults wavez2;
+struct waveDefaults wavez3;
+struct waveDefaults wavez4;
 struct instrument bassDrum = {
     {noise,sine,square,sawtooth,sine},      // waves: triangle,noise,square,sawtooth
     {360,294,146,136,100},                      // frequency
@@ -180,11 +202,9 @@ struct instrument arpeg = {
     };
 
 struct instrument instrumentsArray[16] = { };
-
-struct waveDefaults wave1;
-struct waveDefaults wave2;
-struct waveDefaults wave3;
-struct waveDefaults wave4;
+struct voice voices[2] = { };
+struct waveDefaults wave1[2] = { };
+struct pattern pattern[2] = { };
 
 void initialize(int sampleRate, int bitDepth)
 {
@@ -193,10 +213,27 @@ void initialize(int sampleRate, int bitDepth)
     instrumentsArray[2] = bass;
     instrumentsArray[3] = arpeg;
     instrumentsArray[4] = blank;
+    wave1[0] = wavez1;
+    wave1[1] = wavez2;
+    wave1[2] = wavez3;
+    int tmpNr = 0;
+    for (tmpNr=0;tmpNr<voiceChannels-1;tmpNr++)
+    {
+        voices[tmpNr].currentCalculated = 0;
+        voices[tmpNr].currentInstrument = 0;
+        voices[tmpNr].currentSample = 0;
+        voices[tmpNr].currentVolume = 0.0;
+        voices[tmpNr].totalsCalculated = 0;
+        voices[tmpNr].trailing = 0;
+        voices[tmpNr].output = 0;
+    }
+
+    pattern[0] = pattern1;
+    pattern[1] = pattern2;
 
     sampleBuffer[bufferSize]=0;
 
-beatsPerSecond = (float)pattern.bpm/60.0f;
+beatsPerSecond = (float)120/60.0f;
 quarterNoteLengths = (1000.0f/beatsPerSecond);
 sixteenthNoteLength = quarterNoteLengths / 4.0f; // ms
 barLenghtInMs = quarterNoteLengths * 4.0f;
@@ -212,7 +249,7 @@ onemS = (int)SR/1000.0;
 duration = 10.0;
 int currentCalculated = 0;
 float samplesPerMinute = SR*60.0;
-float sampleIntervalQuarter= samplesPerMinute/(float)pattern.bpm;
+float sampleIntervalQuarter= samplesPerMinute/120;//(float)pattern[0].bpm;
 samplesInterval2 = (int) (sampleIntervalQuarter/4+0.5);
 //double sample_increment = frequency*TABLE_LEN/SR;
 //for (j=0;j<TABLE_LEN;j++) {
@@ -259,75 +296,80 @@ float playPattern() {
     //printf ("stepsize: %d",stepSize);
     if (kulli == 1) {
 if ( patternPosition <= 31 ) {
-
-    if (currentSample < (instrumentsArray[currentInstrument].attack)*onemS) {
-        if (currentVolume < instrumentsArray[currentInstrument].volume[0]) {
-        currentVolume += 0.1;
+   for (i=0;i<voiceChannels;i++) {
+   // i = 1;
+    if (voices[i].currentSample < (instrumentsArray[voices[i].currentInstrument].attack)*onemS) {
+        if (voices[i].currentVolume < instrumentsArray[voices[i].currentInstrument].volume[0]) {
+            voices[i].currentVolume += 0.1;
     }
         else {
-            currentVolume = instrumentsArray[currentInstrument].volume[0]   ;
+            voices[i].currentVolume = instrumentsArray[voices[i].currentInstrument].volume[0]   ;
                 }
     }
-    else if (currentSample < (instrumentsArray[currentInstrument].attack+instrumentsArray[currentInstrument].decay)*onemS && currentVolume > instrumentsArray[currentInstrument].volume[1]) {
-        currentVolume -= 0.1;
+    else if (voices[i].currentSample < (instrumentsArray[voices[i].currentInstrument].attack+instrumentsArray[voices[i].currentInstrument].decay)*onemS && voices[i].currentVolume > instrumentsArray[voices[i].currentInstrument].volume[1]) {
+        voices[i].currentVolume -= 0.1;
     }
-    else if (currentSample < (instrumentsArray[currentInstrument].attack+instrumentsArray[currentInstrument].decay+instrumentsArray[currentInstrument].sustain)*onemS ) {
-        currentVolume = currentVolume;
-    }
-    else {
-        if (currentVolume > 0.0) {
-        currentVolume -=0.1;
+    else if (voices[i].currentSample < (instrumentsArray[voices[i].currentInstrument].attack+instrumentsArray[voices[i].currentInstrument].decay+instrumentsArray[voices[i].currentInstrument].sustain)*onemS ) {
+        voices[i].currentVolume = voices[i].currentVolume;
     }
     else {
-        currentVolume =0.0;
+        if (voices[i].currentVolume > 0.0) {
+            voices[i].currentVolume -=0.1;
+    }
+    else {
+        voices[i].currentVolume =0.0;
     }
 }
-    if (currentSample > stepSize) {
+    if (voices[i].currentSample > stepSize) {
         steps++;
         if (steps>15) {
             steps = 15;
         }
         if (steps<=15) {
-            wavetype = instrumentsArray[currentInstrument].wave[steps];
+            wavetype = instrumentsArray[voices[i].currentInstrument].wave[steps];
         //  fprintf(stderr, "-1234 reading wave:%d\n",wavetype);
         }
-        currentSample = 0;
+        voices[i].currentSample = 0;
     }
-    if (steps == 0 && currentCalculated == 0) { // handle the first step
-        wavetype = instrumentsArray[currentInstrument].wave[steps];
+    if (steps == 0 && voices[i].currentCalculated == 0) { // handle the first step
+        wavetype = instrumentsArray[voices[i].currentInstrument].wave[steps];
     }
-    output = getSample (wavetype,SR,instrumentsArray[currentInstrument].frequency[steps],currentVolume,wave1);
-    if (output > 127)
-        output = 127;
-    if (output < -128)
-        output = -128;
-    currentSample++;
-    currentCalculated++;
-    totalsCalculated++;
+    voices[i].output += getSample (wavetype,SR,instrumentsArray[voices[i].currentInstrument].frequency[steps],voices[i].currentVolume,wave1[i]);
+
+    voices[i].currentSample++;
+    voices[i].currentCalculated++;
+    voices[i].totalsCalculated++;
     // if current calculated sample is under 16th note, but over current instrument lenght then pad to zeroes
-    if (currentCalculated < samplesInterval2 && currentCalculated > stepSize*instrumentsArray[currentInstrument].length) {
+    if (voices[i].currentCalculated < samplesInterval2 && voices[i].currentCalculated > stepSize*instrumentsArray[voices[i].currentInstrument].length) {
         //printf("trailing from: %d to: %d and we are over: %d \n",currentCalculated,samplesInterval2,stepSize*instrumentsArray[currentInstrument].length);
-        output = 0.0;
-        totalsCalculated++;
+        voices[i].output = 0.0;
+        voices[i].totalsCalculated++;
     //  currentSample++;
     //  currentCalculated++;
-        trailing++;
+        voices[i].trailing++;
     }
     // if current calculated sample is over 16th note, change to next instrument in current pattern
-    if (currentCalculated >= samplesInterval2 ) {
-        currentCalculated = 0;
-        currentSample = 0;
-        currentVolume = 0.0;
+    if (voices[i].currentCalculated >= samplesInterval2 ) {
+        voices[i].currentCalculated = 0;
+        voices[i].currentSample = 0;
+        voices[i].currentVolume = 0.0;
         steps = 0;
-        trailing=0;
+        voices[i].trailing=0;
         patternPosition++;
         if (patternPosition > 31)
         patternPosition = 0;
 
-        currentInstrument = pattern.patternData[patternPosition];
-        noteLimit = totalsCalculated + sixteenthNoteLength*onemS;
+        voices[i].currentInstrument = pattern[i].patternData[patternPosition];
+        noteLimit = voices[i].totalsCalculated + sixteenthNoteLength*onemS;
+        }
     }
-    return output;
+  for (i=0;i<=voiceChannels;i++)
+       mixedOutput += voices[i].output;
+    if (mixedOutput > 32767)
+        mixedOutput = 32767;
+       if (mixedOutput < -32768)
+           mixedOutput = -32768;
+    return mixedOutput;
     }
 //fprintf(stderr, "* sample: %f\n",output);
 }
@@ -373,7 +415,7 @@ float playInstrument(playInstr,i) {
        if (steps == 0 && currentCalculated == 0) { // handle the first step
            wavetype = instrumentsArray[playInstr].wave[steps];
        }
-       output = getSample (wavetype,SR,instrumentsArray[playInstr].frequency[steps],currentVolume,wave1);
+       output = 0;//getSample (wavetype,SR,instrumentsArray[playInstr].frequency[steps],currentVolume,wave1);
        if (output > 127)
            output = 127;
        if (output < -128)

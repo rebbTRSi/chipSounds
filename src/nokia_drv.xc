@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "nokia_drv.h"
-int PUS = 1;
+int PUS = 1000;
 // Driver Functions
 void init(void){
     begin(CONTRAST);
@@ -131,11 +131,17 @@ void display_char(char c){
 
 void cls(void){
     //clear the LCD by writing zero bytes to every location
-    int i,j;
+    int i;
     gotoxy(0,0);
     for (i=0;i<84;i++){
-        for (j=0;j<6;j++)
-            lcd_data(0);
+        lcd_data(0);
+        lcd_data(0);
+        lcd_data(0);
+        lcd_data(0);
+        lcd_data(0);
+        lcd_data(0);
+        lcd_data(0);
+
     }
 }
 

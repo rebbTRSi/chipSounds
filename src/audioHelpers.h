@@ -66,7 +66,7 @@ int trivialSquare (int m_inc) {
 switch ( wavetype ) 
     {
     case 0:
-        sample = triangleOsc(volume,FRuency,SR);
+        sample = squareOsc(volume,FRuency,SR);
         break;
     case 1:
         sample = noiseOsc(volume);
@@ -75,10 +75,10 @@ switch ( wavetype )
         sample = squareOsc(volume,FRuency,SR);
         break;
     case 3:
-        sample = sawtoothOsc(volume,FRuency,SR);
+        sample = squareOsc(volume,FRuency,SR);
         break;
     case 4:
-        sample = sineOsc(volume,FRuency,SR);
+        sample = squareOsc(volume,FRuency,SR);
         break;
     default:
         sample = 0;

@@ -15,7 +15,7 @@ port butt3 = XS1_PORT_1C;
 extern void calculate(chanend c_synth_audio);  // This function is defined in C
 extern int setPlayState(int state);  // This function is defined in C
 extern int getPlayState();  // This function is defined in C
-
+extern int setCurrentInstrument(int instr);
 
 void fonttest(void);
 void printText(char textBuffer[]);
@@ -99,7 +99,7 @@ int buttonOld2 = 1;
             t2 :> time2;
             if (time2 - lastDebounce2 > 50000) {
                 if (button2 != buttonOld2) {
-                   cls();
+                    cls();
                     safememset(str,0,200);
                     current = getInstrument(currentInstrumentNr); // get instrumentdata
                     int length = current.length;
@@ -144,13 +144,16 @@ void fonttest(void){
 }
 void printCurrent(int currentInstrumentNr,int inversedChar) {
     cls();
-    safememset(str,0,200);
-
+   safememset(str,0,200);
+   sprintf(str,"instr nr: %d   ",currentInstrumentNr);
+   text (str);
+   /*
     if (currentInstrumentNr < 0 || currentInstrumentNr > 3) {
         text("ime nullii");
     }
 
-    current = getInstrument(currentInstrumentNr); // get instrumentdata
+ //   current = getInstrument(currentInstrumentNr); // get instrumentdata
+   // current = copyInstrumentTest; // get instrumentdata
     int length = current.length;
     x1 = 0;
     sprintf(str,"instr nr: %d   ",currentInstrumentNr);
@@ -180,7 +183,7 @@ void printCurrent(int currentInstrumentNr,int inversedChar) {
 
         sprintf(freqBuf,"-- %d -- ",current.frequency[inversedChar]);
         safestrcat(str,freqBuf);
-        text (str);
+        text (str);*/
 }
 
 void printText(char textBuffer[]){

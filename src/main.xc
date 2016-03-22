@@ -6,7 +6,7 @@
 #include "pwm.h"
 #include "nokia.h"
 #include <print.h>
-
+int samplerate = 22050;
 void initialized(char textBuffer[]);
 extern void initialize(int sampleRate, int bitDepth);
 void uiHandler(chanend uiTrigger);
@@ -16,7 +16,7 @@ port p_speaker = XS1_PORT_1E;
 int LEN = 30;
 
 int main() {
-    initialize (22050,16); // initialize instruments
+    initialize (samplerate,16); // initialize instruments
     chan c_pwm, c_synth_audio, uiTrigger;
     init();
     led(1);
@@ -26,7 +26,7 @@ int main() {
         uiHandler(uiTrigger);
         trigger(uiTrigger,c_synth_audio);
         buffer(c_synth_audio, c_pwm);
-        pwm_server(c_pwm, p_speaker, 22050);
+        pwm_server(c_pwm, p_speaker, samplerate);
         }
     }
            return 0;
