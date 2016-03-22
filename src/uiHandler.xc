@@ -13,6 +13,10 @@ port butt1 = XS1_PORT_32A;
 port butt2 = XS1_PORT_1D;
 port butt3 = XS1_PORT_1C;
 extern void calculate(chanend c_synth_audio);  // This function is defined in C
+extern int setPlayState(int state);  // This function is defined in C
+extern int getPlayState();  // This function is defined in C
+
+
 void fonttest(void);
 void printText(char textBuffer[]);
 void printCurrent(int currentInstrumentNr,int inversedChar);
@@ -95,7 +99,7 @@ int buttonOld2 = 1;
             t2 :> time2;
             if (time2 - lastDebounce2 > 50000) {
                 if (button2 != buttonOld2) {
-                    cls();
+                   cls();
                     safememset(str,0,200);
                     current = getInstrument(currentInstrumentNr); // get instrumentdata
                     int length = current.length;
@@ -119,7 +123,13 @@ int buttonOld2 = 1;
             t :> time;
             if (time - lastDebounce > 50000) {
                 if (button != buttonOld) {
-                    uiTrigger <: 1;
+                    int currentState = getPlayState();
+                    if (currentState == 1) {
+                        setPlayState(0);
+                    }
+                    else {
+                        setPlayState(1);
+                    }
                 }
             }
             buttonOld = button;

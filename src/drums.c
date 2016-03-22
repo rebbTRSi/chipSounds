@@ -54,9 +54,10 @@ F   8s      24s
 #include "channel_funcs.h"
 int i=0;
 #define PI 3.14159265
-int bufferSize =512;
+int bufferSize = 32;
 int kulli = 0;
 int q = 200;
+int playState = 1;
 int steps = 0;
 int toOutput = 0;
 int length = 1024;
@@ -229,6 +230,15 @@ int setInstrument (int instrumentNr, struct instrument instrumentData ) {
    return 1;
 }
 
+int getPlayState() {
+    return playState;
+}
+
+int setPlayState(int state) {
+    playState = state;
+    return state;
+}
+
 struct instrument getInstrument (int instrumentNr) {
     if (instrumentNr <= 16 && instrumentNr >= 0) {
         return instrumentsArray[instrumentNr];
@@ -242,12 +252,8 @@ struct instrument getInstrument (int instrumentNr) {
     }
 }
 
-float playPattern(int hometotalsCalculated) {
+float playPattern() {
 
-    if (totalsCalculated >= hometotalsCalculated) {
-        output = 0.0;
-        return -128.0;
-    }
     //printf ("instrumentLengt:%d samples\n",instrumentsArray[currentInstrument].length*stepSize);
     //printf ("max instrument length:%d in samples in seconds: %f\n",samplesInterval2,sixteenthNoteLength);
     //printf ("stepsize: %d",stepSize);
@@ -390,22 +396,17 @@ float playInstrument(playInstr,i) {
 
 void calculate(buffer,playInstr)
 {
-    currentSample = 0;
-    currentCalculated = 0;
-    totalsCalculated = 0;
-    steps = 0;
-    toOutput = 0;
-
-    for (i=0;i<44100*10;i++) {
-    sample = playPattern(i);
+if (playState == 1) {
+    sample = playPattern();
     sampleBuffer[toOutput] = sample;
     toOutput++;
 
     if (toOutput == bufferSize) {
         for (int y=0;y<bufferSize;y++) {
-            xc_channel_out (buffer,sampleBuffer[y]);
+            xc_channel_out (buffer,*(sampleBuffer+y));
             }
             toOutput = 0;
         }
     }
 }
+

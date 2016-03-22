@@ -12,11 +12,11 @@ extern void initialize(int sampleRate, int bitDepth);
 void uiHandler(chanend uiTrigger);
 void buffer(chanend c_producer, chanend c_consumer);
 void trigger(chanend uiTrigger, chanend c_synth_audio);
-port p_speaker = XS1_PORT_1A;
+port p_speaker = XS1_PORT_1E;
 int LEN = 30;
 
 int main() {
-    initialize (22050,8); // initialize instruments
+    initialize (22050,16); // initialize instruments
     chan c_pwm, c_synth_audio, uiTrigger;
     init();
     led(1);

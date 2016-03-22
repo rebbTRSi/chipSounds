@@ -10,32 +10,9 @@
 #include <safestring.h>
 
 extern void calculate(chanend c_synth_audio,int playInstr);  // This function is defined in C
-int x;
-int isPlaying = 0;
-int xi;
+int x = 0;
 void trigger (chanend uiTrigger, chanend c_synth_audio) {
     while(1){
-    select
-      {
-      case uiTrigger :> x :
-        switch (x)
-          {
-        case 0:
             calculate(c_synth_audio,x);
-            break;
-        case 1:
-            calculate(c_synth_audio,x);
-            break;
-        case 2:
-            calculate(c_synth_audio,x);
-            break;
-        case 3:
-            calculate(c_synth_audio,x);
-            break;
-        default:
-            break;
-          }
-      break;
-      }
     }
 }
