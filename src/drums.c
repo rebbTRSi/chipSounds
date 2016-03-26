@@ -252,7 +252,7 @@ struct instrument getInstrument (int instrumentNr) {
     }
 }
 
-float playPattern() {
+int playPattern() {
 
     //printf ("instrumentLengt:%d samples\n",instrumentsArray[currentInstrument].length*stepSize);
     //printf ("max instrument length:%d in samples in seconds: %f\n",samplesInterval2,sixteenthNoteLength);
@@ -334,7 +334,7 @@ if ( patternPosition <= 31 ) {
 else {
     //fprintf(stderr, "Instruments not inited yet!!!\n");
 }
-        return 0.0;
+        return 0;
 }
 float playInstrument(playInstr,i) {
     if (currentSample < (instrumentsArray[playInstr].attack)*onemS) {
@@ -394,19 +394,5 @@ float playInstrument(playInstr,i) {
        return output;
        }
 
-void calculate(buffer,playInstr)
-{
-if (playState == 1) {
-    sample = playPattern();
-    sampleBuffer[toOutput] = sample;
-    toOutput++;
 
-    if (toOutput == bufferSize) {
-        for (int y=0;y<bufferSize;y++) {
-            xc_channel_out (buffer,*(sampleBuffer+y));
-            }
-            toOutput = 0;
-        }
-    }
-}
 

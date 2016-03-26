@@ -8,11 +8,11 @@
 #include "pwm.h"
 #include "nokia.h"
 #include <safestring.h>
-
-extern void calculate(chanend c_synth_audio,int playInstr);  // This function is defined in C
-int x = 0;
+extern int playPattern();
+extern int getPlayState();
 void trigger (chanend uiTrigger, chanend c_synth_audio) {
     while(1){
-            calculate(c_synth_audio,x);
+        if (getPlayState() == 1)
+            c_synth_audio <: playPattern();
     }
 }

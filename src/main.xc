@@ -25,8 +25,8 @@ int main() {
         par {
         uiHandler(uiTrigger);
         trigger(uiTrigger,c_synth_audio);
-        buffer(c_synth_audio, c_pwm);
         pwm_server(c_pwm, p_speaker, 22050);
+        buffer(c_synth_audio, c_pwm);
         }
     }
            return 0;
