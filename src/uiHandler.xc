@@ -44,8 +44,6 @@ int buttonOld2 = 1;
   timer t;
   timer t1;
   timer t2;
-  int starttime;
-  int stoptime;
   unsigned int time;
   unsigned int time1;
   unsigned int time2;

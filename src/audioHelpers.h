@@ -11,18 +11,22 @@ struct waveDefaults {
 };
 
 double sines = 0.0;
-int modulo = 0;
-int PW = 10;
+float modulo = 0.0;
+float PW = 1.0;
 double cosine = 1.0;
 const double B = 4/(float)M_PI;
 const double C = -4/((float)M_PI*(float)M_PI);
 const double P = 0.225;
 const double D = 5.0*(float)M_PI*(float)M_PI;
+const double pi2 = M_PI *2;
 float p = 0.0;
 float y = 0.0;
 float y2 = 0.0;
 float phase = 0.0;
 float triPhase = 0.0;
+int fixTriPhase = 0;
+int fixPi = 314159265;
+int fixPi2 = 628318530;
 int getBps (int SR, int bitLength, int numberOfChannels) { return SR*bitLength*numberOfChannels; }
 int stepSizetoSec (int stepSize) { return 1000/stepSize; }
 int getStepLength (int SR, int stepSize, int bitLength, int numberOfChannels) {
@@ -52,15 +56,10 @@ float BhaskaraISine (double x) { double d = fabs(x); double sgn = d == 0 ? 1.0 :
 float noiseOsc (int A) { return  A*((2.0*((rand()%(127- (-128)))+ (-128))-1.0)/127); }
 float squareOsc (float A, int FR, int SR) { if(p< M_PI)y=A;else y=-A;p=p+((2 * M_PI * FR)/SR);if(p>2*M_PI)p=p-(2*M_PI);return y; }
 float sawtoothOsc (float A, int FR, int SR) { y2=A-(A/M_PI*phase);phase=phase+((2*M_PI*FR)/SR);if(phase>2*M_PI){phase = phase - (2 * M_PI);}return y2; }
-float triangleOsc (float A, int FR, int SR) { if (triPhase < M_PI) y = -A + (2 * A / M_PI) * triPhase; else y = 3*A - (2 * A / M_PI) * triPhase; triPhase = triPhase + ((2 * M_PI * FR) / SR); if (triPhase > 2 * M_PI) triPhase = triPhase - (2 * M_PI); return y; }
+float triangleOsc (float A, int FR, int SR) { if (triPhase < M_PI) y = -A + (2 * A / M_PI) * triPhase; else y = 3*A - (2 * A / M_PI) * triPhase; triPhase = triPhase + ((pi2 * FR) / SR); if (triPhase > pi2) triPhase = triPhase - (pi2); return y; }
+
 float getSample (int wavetype,int SR,int FRuency,float volume,struct waveDefaults waveDefaults) {
-int trivialSquare (int m_inc) {
-    if(modulo >= 100)
-        modulo -=100;
-    double trivial_square = modulo > PW/100 ? -100:+100;
-    modulo += m_inc;
-    return trivial_square;
-}
+
     float sample;
 
 switch ( wavetype ) 

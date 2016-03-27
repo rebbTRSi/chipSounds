@@ -71,7 +71,6 @@ float currentVolume = 0;
 int patternPosition = 0;
 FILE *fp;
 signed int sample;
-int sampleBuffer[];
 struct instrument {
     int wave[16];
     int frequency[16];
@@ -169,7 +168,7 @@ struct instrument bass = {
     };
 
 struct instrument arpeg = {
-    {square,square,sawtooth,sawtooth,square,square,square,square,square,square},
+    {triangle,triangle,triangle,triangle,triangle,triangle,triangle,triangle,triangle,triangle},
     {523,659,783,659,523,659,783,659,523,659},
     {20,110},
     70,
@@ -193,9 +192,6 @@ void initialize(int sampleRate, int bitDepth)
     instrumentsArray[2] = bass;
     instrumentsArray[3] = arpeg;
     instrumentsArray[4] = blank;
-
-    sampleBuffer[bufferSize]=0;
-
 beatsPerSecond = (float)pattern.bpm/60.0f;
 quarterNoteLengths = (1000.0f/beatsPerSecond);
 sixteenthNoteLength = quarterNoteLengths / 4.0f; // ms
