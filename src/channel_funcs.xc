@@ -1,4 +1,3 @@
-#include <stdio.h>
 
 void xc_channel_out(chanend c, int v)
 {

@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include "pwm.h"
 #include "nokia.h"
-#include <print.h>
 
 
 void initialized(char textBuffer[]);
@@ -26,7 +25,6 @@ int main() {
 
 	while(1) {
 		par {
-
 			uiHandler(uiTrigger);
 			trigger(uiTrigger,c_synth_audio);
 			pwm_server(c_pwm, p_speaker, 22050);

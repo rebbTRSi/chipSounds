@@ -46,16 +46,17 @@
  */
 #include <timer.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
 #include "audioHelpers.h"
 #include "channel_funcs.h"
+#include "uiHandler.h"
+
 int i=0;
 #define PI 3.14159265
 int bufferSize = 32;
-int kulli = 0;
+int inited = 0;
 int q = 200;
 int playState = 1;
 int steps = 0;
@@ -69,7 +70,6 @@ int currentInstrument = 0;
 int totalsCalculated = 0;
 float currentVolume = 0;
 int patternPosition = 0;
-FILE *fp;
 signed int sample;
 int sampleBuffer[];
 struct instrument {
@@ -85,13 +85,13 @@ struct instrument {
 
 struct epattern {
 	int bpm;
-	int patternData[32];
+	int patternData[16];
 };
 
 struct epattern pattern = {
-	160,
+	120,
 	//{0,3,3,3,0,3,3,3,0,3,3,3,0,3,3,3,0,3,3,3}
-	{1,4,2,2,1,4,2,2,1,4,2,0,1,4,2,2,1,4,2,2,1,4,2,2,1,4,2,0,1,3,1,1}
+	{1,4,2,2,1,4,2,2,1,4,2,0,1,4,2,2}
 //  {0,3,0,3,0,3,0,3,0,3,0,3,0,3,0,3}
 };
 int samplesInterval2 = 0;
@@ -224,7 +224,7 @@ void initialize(int sampleRate, int bitDepth)
 	totalLength = (speedInSamples*4.0f);
 	noteLimit = (int) (sixteenthNoteLength * (kbps/1000.0f));
 // print sane defaults
-	kulli = 1;
+	inited = 1;
 }
 
 int setInstrument (int instrumentNr, struct instrument instrumentData ) {
@@ -246,11 +246,13 @@ struct epattern getCurrentPattern() {
 }
 
 int getCurrentPatternStep(int step) {
+    printf ("step:%d",step);
 	return pattern.patternData[step];
 }
 
 void setCurrentPatternStep(int step,int value) {
-	pattern.patternData[step,value];
+    printf ("step:%d",step);
+	pattern.patternData[step] = value;
 }
 
 void changeCurrentParameter(int changInstr, int parameterNr,int parameterTo){
@@ -261,6 +263,16 @@ void changeCurrentParameter(int changInstr, int parameterNr,int parameterTo){
 		//   printf ("to: %d\n",instrumentsArray[changInstr].wave[parameterNr]);
 
 	}
+}
+
+void increaseFreq(int changInstr,int wavenr, int value) {
+    if (value < 10)
+        value = 1000;
+    if (value >1000)
+        value = 10;
+    if (changInstr >= 0 && changInstr <= 16) {
+        instrumentsArray[changInstr].frequency[wavenr] = value;
+    }
 }
 
 int getBpm() {
@@ -297,8 +309,8 @@ int playPattern() {
 	//printf ("instrumentLengt:%d samples\n",instrumentsArray[currentInstrument].length*stepSize);
 	//printf ("max instrument length:%d in samples in seconds: %f\n",samplesInterval2,sixteenthNoteLength);
 	//printf ("stepsize: %d",stepSize);
-	if (kulli == 1) {
-		if ( patternPosition <= 31 ) {
+	if (inited == 1) {
+		if ( patternPosition <= 15 ) {
 
 			if (currentSample < (instrumentsArray[currentInstrument].attack)*onemS) {
 				if (currentVolume < instrumentsArray[currentInstrument].volume[0]) {
@@ -344,6 +356,16 @@ int playPattern() {
 			currentSample++;
 			currentCalculated++;
 			totalsCalculated++;
+
+			// 60000 / (BPM * PPQ)
+			int PPQN = 60000 / pattern.bpm / 6; // ppq in LSDj is 6 by default
+			float samplesPerMillisecond = SR / 1000;
+			int PPQNSampleLenght = PPQN * samplesPerMillisecond;
+
+			if (totalsCalculated % PPQNSampleLenght == 0) {
+			    sendLSDjTick();
+			}
+
 			// if current calculated sample is under 16th note, but over current instrument lenght then pad to zeroes
 			if (currentCalculated < samplesInterval2 && currentCalculated > stepSize*instrumentsArray[currentInstrument].length) {
 				//printf("trailing from: %d to: %d and we are over: %d \n",currentCalculated,samplesInterval2,stepSize*instrumentsArray[currentInstrument].length);
@@ -361,7 +383,7 @@ int playPattern() {
 				steps = 0;
 				trailing=0;
 				patternPosition++;
-				if (patternPosition > 31)
+				if (patternPosition > 15)
 					patternPosition = 0;
 
 				currentInstrument = pattern.patternData[patternPosition];

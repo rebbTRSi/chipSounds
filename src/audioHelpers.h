@@ -9,7 +9,7 @@ struct waveDefaults {
 	float phase;
 	float triPhase;
 };
-
+float PI2 = 6.28318531;
 double sines = 0.0;
 int modulo = 0;
 int PW = 10;
@@ -58,7 +58,7 @@ float calcSine (double f) {
 	sines += f * cosine; cosine -= f*sines; return sines;
 }
 float sineCoefficient (int FRuency, int SR) {
-	return 2.0 * M_PI * FRuency / SR;
+	return PI2 * FRuency / SR;
 }
 float sineOsc (float A,int FRuency,int SR) {
 	double coef=sineCoefficient(FRuency,SR); return A*calcSine(coef);
@@ -73,22 +73,15 @@ float noiseOsc (int A) {
 	return A*((2.0*((rand()%(127- (-128)))+ (-128))-1.0)/127);
 }
 float squareOsc (float A, int FR, int SR) {
-	if(p< M_PI) y=A; else y=-A; p=p+((2 * M_PI * FR)/SR); if(p>2*M_PI) p=p-(2*M_PI); return y;
+	if(p< M_PI) y=A; else y=-A; p=p+((PI2 * FR)/SR); if(p>PI2) p=p-PI2; return y;
 }
 float sawtoothOsc (float A, int FR, int SR) {
-	y2=A-(A/M_PI*phase); phase=phase+((2*M_PI*FR)/SR); if(phase>2*M_PI) {phase = phase - (2 * M_PI); } return y2;
+	y2=A-(A/M_PI*phase); phase=phase+((PI2*FR)/SR); if(phase>PI2) {phase = phase - PI2; } return y2;
 }
 float triangleOsc (float A, int FR, int SR) {
-	if (triPhase < M_PI) y = -A + (2 * A / M_PI) * triPhase; else y = 3*A - (2 * A / M_PI) * triPhase; triPhase = triPhase + ((2 * M_PI * FR) / SR); if (triPhase > 2 * M_PI) triPhase = triPhase - (2 * M_PI); return y;
+	if (triPhase < M_PI) y = -A + (2 * A / M_PI) * triPhase; else y = 3*A - (2 * A / M_PI) * triPhase; triPhase = triPhase + ((PI2 * FR) / SR); if (triPhase > PI2) triPhase = triPhase - PI2; return y;
 }
 float getSample (int wavetype,int SR,int FRuency,float volume,struct waveDefaults waveDefaults) {
-	int trivialSquare (int m_inc) {
-		if(modulo >= 100)
-			modulo -=100;
-		double trivial_square = modulo > PW/100 ? -100 : +100;
-		modulo += m_inc;
-		return trivial_square;
-	}
 	float sample;
 
 	switch ( wavetype )

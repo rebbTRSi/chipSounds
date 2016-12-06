@@ -1,18 +1,22 @@
 #include <stdio.h>
 #include <xs1.h>
-#include <xscope.h>
 #include <platform.h>
 #include <timer.h>
-#include <stdlib.h>
 #include "nokia.h"
 #include "pwm.h"
 #include "nokia.h"
 #include <safestring.h>
 
+#define PERIOD 100000
+
+/* This the port where the leds reside */
+port quad = XS1_PORT_4E;
+
+
 /* ********************** */
 /* Used startKit Ports    */
 /* For actual pins refer  */
-/* Hšdr portmap.txt       */
+/* Hï¿½dr portmap.txt       */
 /* ********************** */
 port butt1 = XS1_PORT_1A;
 port butt2 = XS1_PORT_1D;
@@ -34,7 +38,7 @@ struct instrument {
 
 struct epattern {
     int bpm;
-    int patternData[32];
+    int patternData[16];
 };
 
 typedef enum { triangle, noise, square, sawtooth, sine } waves; // sine = !, triangle = ", square = #, noise = $, sawtooth = %
@@ -49,23 +53,25 @@ extern int setPlayState(int state);
 extern int getPlayState();
 extern void changeCurrentParameter(int currentIntrument, int parameterNr, int parameterTo);
 extern void setCurrentPatternStep (int step,int value);
-extern void getCurrentPatternStep (int step);
+extern int getCurrentPatternStep (int step);
 extern void setBpm(int bpm);
 extern int getBpm();
 extern struct epattern getCurrentPattern();
 extern struct instrument getInstrument(int instrumentNr);
 extern int setInstrument (int instrumentNr, struct instrument instrumentData );
-
+extern void increaseFreq(int changInstr,int waveNr, int value) ;
 /* ********************** */
 /* XC function prototypes */
 /* ********************** */
-
 void drawUI(int uiState,int buttonNr);
-void updatePatternData();
+void updatePatternData(int iversedPatternPosition);
 void fonttest(void);
 void printText(char textBuffer[]);
 void printCurrent(int currentInstrumentNr,int inversedChar);
-
+int quadTicks = 0;
+int oldQuadPulse = 0;
+int newQuadPulse = 0;
+int debounceTime = 10000;
 char str[200];
 int www = 0;
 int newWave = 0;
@@ -83,7 +89,10 @@ timer t1;
 timer t2;
 timer t3;
 timer t4;
-
+timer tmr;
+unsigned tmr1;
+int ticks=0;
+out port x = XS1_PORT_1P;
 int starttime;
 int stoptime;
 unsigned int time;
@@ -102,6 +111,8 @@ int x1=1;
 char teksti[33];
 int currentInstrumentNr = 0;
 int currentInverseWaveNr=0;
+int currentInversePatternPosition = -1;
+int currentPatternPosition = 0;
 
 void uiHandler(chanend uiTrigger) {
 	current = getInstrument(currentInstrumentNr); // get instrumentdata
@@ -117,18 +128,19 @@ void uiHandler(chanend uiTrigger) {
 	};
 
 	while (1) {
+        x <: 1;
+
 		unsigned button =  peek(butt1) & 1;
 		unsigned button1 = peek(butt2) & 1;
 		unsigned button2 = peek(butt3) & 1;
 		unsigned button3 = peek(butt4) & 1;
 		unsigned button4 = peek(butt5) & 1;
 
-
 		if (button1 == 1 && button1 != buttonOld1) {
 		    t1:> lastDebounce1;
 		}
 		t1:> time1;
-		if (time1 - lastDebounce1 > 50000) {
+		if (time1 - lastDebounce1 > debounceTime) {
 			if (button1 != buttonOld1) {
 				drawUI(currentUIState,1);
 			}
@@ -138,17 +150,15 @@ void uiHandler(chanend uiTrigger) {
 		    t4:> lastDebounce4;
 		}
 		t4:> time4;
-		if (time4 - lastDebounce4 > 50000) {
+		if (time4 - lastDebounce4 > debounceTime) {
 			if (button4 != buttonOld4) {
 				if (currentUIState == pattern) {
 					currentUIState = sound;
 					drawUI(currentUIState,4);
-					text ("sound");
 				}
 				else if (currentUIState == sound) {
 					currentUIState = pattern;
 					drawUI(currentUIState,4);
-					text ("pattern");
 				}
 			}
 		}
@@ -157,28 +167,27 @@ void uiHandler(chanend uiTrigger) {
 		    t3:> lastDebounce3;
 		}
 		t3:> time3;
-		if (time3 - lastDebounce3 > 50000) {
+		if (time3 - lastDebounce3 > debounceTime) {
 			if (button3 != buttonOld3) {
 				drawUI(currentUIState,3);
-
 			}
+
 		}
 
 		if (button2 == 1 && button != buttonOld2) {
 		    t2:> lastDebounce2;
 		}
 		t2:> time2;
-		if (time2 - lastDebounce2 > 50000) {
+		if (time2 - lastDebounce2 > debounceTime) {
 			if (button2 != buttonOld2) {
 				drawUI(currentUIState,2);
-
 			}
 		}
 		if (button == 1 && button != buttonOld) {
 		    t:> lastDebounce;
 		}
 		t:> time;
-		if (time - lastDebounce > 50000) {
+		if (time - lastDebounce > debounceTime) {
 			if (button != buttonOld) {
 				int currentState = getPlayState();
 				drawUI(currentUIState,0);
@@ -193,6 +202,18 @@ void uiHandler(chanend uiTrigger) {
 	}
 }
 
+void sendLSDjTick() {
+    for(ticks=0;ticks<8;ticks++) {
+        tmr :> tmr1;
+        // add delay to t, wait until timer reaches that value
+        tmr when timerafter (tmr1 + PERIOD) :> void;
+        x <: 0;
+        tmr :> tmr1;
+        // add delay to t, wait until timer reaches that value
+        tmr when timerafter (tmr1 + PERIOD) :> void;
+        x <: 1;
+    }
+}
 void fonttest(void){
 	cls();
 	text("Button pressed\n");       //text() function dumps direct to screen
@@ -208,7 +229,7 @@ void printCurrent(int currentInstrumentNr,int inversedChar) {
 	current = getInstrument(currentInstrumentNr); // get instrumentdata
 	int length = current.length;
 	x1 = 0;
-	sprintf(str,"instr nr: %d   ",currentInstrumentNr);
+	sprintf(str,"INSTR NR: %d   ",currentInstrumentNr);
 	for (x1=0; x1<length; x1++) {
 		if (x1==inversedChar) {         // sine = !, triangle = ", square = #, noise = $, sawtooth = %
 			switch (current.wave[x1]) {
@@ -244,37 +265,83 @@ void printText(char textBuffer[]){
 }
 
 void drawUI(int uiState,int buttonNr) {
-	updatePatternData();
+//	updatePatternData(currentInversePatternPosition);
 
 	switch (uiState) {
 	case pattern:
 		switch (buttonNr) {
-		case 1:
+	/*	case 1:
 			int bpm = getBpm();
 			setBpm(bpm+1);
-			updatePatternData();
+			updatePatternData(currentInversePatternPosition);
 			break;
 		case 2:
 			int bpm = getBpm();
 			setBpm(bpm-1);
-			updatePatternData();
-			break;
+			updatePatternData(currentInversePatternPosition);
+			break;*/
+		case 1:
+		    int currentPatternInstrument = getCurrentPatternStep(currentInversePatternPosition);
+		    currentPatternInstrument++;
+		    if (currentPatternInstrument < 0)
+		        currentPatternInstrument = 4;
+		    if (currentPatternInstrument > 4)
+		        currentPatternInstrument = 0;
+           // printf ("NEW:%d at position: %d\n",currentPatternInstrument,currentInversePatternPosition);
+
+		    setCurrentPatternStep(currentInversePatternPosition,currentPatternInstrument);
+            updatePatternData(currentInversePatternPosition);
+		    break;
+		case 2:
+		    currentInversePatternPosition++;
+		    if (currentInversePatternPosition > 15) {
+		        currentInversePatternPosition = 0;
+		    }
+		    if (currentInversePatternPosition < 0) {
+		        currentInversePatternPosition = 15;
+		    }
+		    updatePatternData(currentInversePatternPosition);
+		    break;
+		case 3:
+		    int perse = 0;
+		   for (perse=0;perse<1000;perse++) {
+
+		    for(ticks=0;ticks<8;ticks++) {
+		        tmr :> tmr1;
+		        // add delay to t, wait until timer reaches that value
+		        tmr when timerafter (tmr1 + PERIOD) :> void;
+		        x <: 0;
+		        tmr :> tmr1;
+		        // add delay to t, wait until timer reaches that value
+		        tmr when timerafter (tmr1 + PERIOD) :> void;
+		        x <: 1;
+		    }
+		   }
+            break;
 		default:
+            updatePatternData(currentInversePatternPosition);
 			break;
 		}
 		break;
 	case sound:
 		switch (buttonNr) {
 		case 0:
-			int currentState = getPlayState();
+			/*int currentState = getPlayState();
 			if (currentState == 1) {
-				text("stop");
+				text("STOP");
 				setPlayState(0);
 			}
 			else {
-				text("start");
+				text("START");
 				setPlayState(1);
-			}
+			}*/
+            int newFreq=0;
+            newFreq = current.frequency[currentInverseWaveNr];
+            newFreq +=10;
+		    increaseFreq(currentInstrumentNr,currentInverseWaveNr,newFreq);
+            current = getInstrument(currentInstrumentNr); // get instrumentdata
+            printCurrent(currentInstrumentNr,currentInverseWaveNr);
+
 			break;
 		case 1:
 			currentInstrumentNr++;
@@ -317,22 +384,42 @@ void drawUI(int uiState,int buttonNr) {
 			printCurrent(currentInstrumentNr,currentInverseWaveNr);
 			break;
 		}
+		break;
 	default: break;
 	}
 }
 
-void updatePatternData() {
+void updatePatternData(int iversedPatternPosition) {
 	cls();
 	currentPattern = getCurrentPattern();
 	int bpm = currentPattern.bpm;
 	safememset(str,0,200);
-	sprintf(str,"bpm: %d\n ",bpm);
-	text (str);
-	int i;
-	for (i=0; i<15; i++) {
-		sprintf(str,"%d ",currentPattern.patternData[i]);
-		text (str);
+	//sprintf(str,"BPM: %d\n ",bpm);
+	//text (str);
+
+	x1 = 0;
+	for (x1=0; x1<16; x1++) {
+	    if (x1==iversedPatternPosition) {         // inversed numbers mapped to lowcase alphabets
+	        switch (currentPattern.patternData[x1]) {
+	            case 0 : safestrcat(str,"a "); break;
+	            case 1 : safestrcat(str,"b "); break;
+	            case 2 : safestrcat(str,"c "); break;
+	            case 3 : safestrcat(str,"d "); break;
+	            case 4 : safestrcat(str,"e "); break;
+	            case 5 : safestrcat(str,"f "); break;
+	            case 6 : safestrcat(str,"g "); break;
+	            case 7 : safestrcat(str,"h "); break;
+	            case 8 : safestrcat(str,"i "); break;
+	            case 9 : safestrcat(str,"j "); break;
+	            default: break;
+	        }
+	    }
+	    else {
+	        char instBuf[20];
+	        sprintf(instBuf,"%d ",currentPattern.patternData[x1]);
+	        safestrcat(str,instBuf);
+	    }
 	}
+    text (str);
+
 }
-
-

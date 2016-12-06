@@ -7,5 +7,5 @@
 
 #ifndef CHANNEL_FUNCS_H_
 #define CHANNEL_FUNCS_H_
-void xc_channel_out(c, v);
+void xc_channel_out(void* c,void* v);
 #endif /* CHANNEL_FUNCS_H_ */

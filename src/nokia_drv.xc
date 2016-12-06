@@ -7,7 +7,6 @@
 
 #include <xs1.h>
 #include <timer.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>

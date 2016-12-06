@@ -19,7 +19,6 @@
 // THE SOFTWARE.
 
 #include <xs1.h>
-#include <stdio.h>
 
 void pwm_server(chanend c_samples, out port p_pwm_output, int pwm_frequency)
 {

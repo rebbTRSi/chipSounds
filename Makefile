@@ -16,7 +16,7 @@ USED_MODULES =
 # XCC_XC_FLAGS, XCC_C_FLAGS, XCC_ASM_FLAGS, XCC_CPP_FLAGS
 # If the variable XCC_MAP_FLAGS is set it overrides the flags passed to
 # xcc for the final link (mapping) stage.
-XCC_FLAGS_Debug = -O0 -g -lxscope -fxscope
+XCC_FLAGS_Debug = -O0 -g 
 XCC_FLAGS_Release = -O2 -g
 
 # The XCORE_ARM_PROJECT variable, if set to 1, configures this
